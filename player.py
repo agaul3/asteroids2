@@ -18,6 +18,53 @@ class Player(CircleShape):
         c = self.position - forward * self.radius + right
         return [a, b, c]
 
+    def point_in_triangle(self, point, triangle):
+        a, b, c = triangle
+
+        def sign(p1, p2, p3):
+            return (
+                (p1.x - p3.x) * (p2.y - p3.y)
+                - (p2.x - p3.x) * (p1.y - p3.y)
+            )
+
+        side_1 = sign(point, a, b) < 0
+        side_2 = sign(point, b, c) < 0
+        side_3 = sign(point, c, a) < 0
+
+        return side_1 == side_2 == side_3
+
+    def distance_to_line(self, point, start, end):
+        line = end - start
+
+        if line.length_squared() == 0:
+            return point.distance_to(start)
+
+        t = (point - start).dot(line) / line.length_squared()
+        t = max(0, min(1, t))
+
+        closest_point = start + line * t
+
+        return point.distance_to(closest_point)
+
+    def collides_with(self, other):
+        triangle = self.triangle()
+
+        # Check if the center of the asteroid is inside the triangle
+        if self.point_in_triangle(other.position, triangle):
+            return True
+
+        # Check if the asteroid touches any edge of the triangle
+        for i in range(3):
+            start = triangle[i]
+            end = triangle[(i + 1) % 3]
+
+            distance = self.distance_to_line(other.position, start, end)
+
+            if distance <= other.radius:
+                return True
+
+        return False
+
     def draw(self, screen):
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
 

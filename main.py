@@ -14,6 +14,9 @@ def main():
     clock = pygame.time.Clock()
 
     dt = 0.0
+    score = 0
+    lives = 3
+    font = pygame.font.Font(None, 36)
     x = SCREEN_WIDTH / 2
     y = SCREEN_HEIGHT / 2
 
@@ -38,21 +41,35 @@ def main():
         for asteroid in asteroids:
             if player.collides_with(asteroid) == True:
                 log_event("player_hit")
-                print("Game over!")
-                sys.exit()
+                lives -= 1
+                asteroid.kill()
 
-            for shot in shots:
+                if lives == 0:
+                    print("Game over!")
+                    sys.exit()
+
+        for shot in shots:
+            for asteroid in asteroids:
                 if shot.collides_with(asteroid) == True:
                     log_event("asteroid_shot")
                     shot.kill()
                     asteroid.split()
+                    score += 1
+                    break
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
         screen.fill("black")
+
         for entity in drawable:
             entity.draw(screen)
+
+        score_text = font.render(f"Score: {score}", True, "white")
+        screen.blit(score_text, (10, 10))
+        lives_text = font.render(f"Lives: {lives}", True, "white")
+        screen.blit(lives_text, (10, 45))  
+
         pygame.display.flip()
     
     print(f"Starting Asteroids with pygame version: {pygame.version.ver}")
