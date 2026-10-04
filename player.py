@@ -1,13 +1,15 @@
 import pygame
 from circleshape import CircleShape
-from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS
+from constants import PLAYER_RADIUS, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS
 from shot import Shot
+from visuals import draw_centered, get_sprite
 
 class Player(CircleShape):
-    def __init__(self, x, y):
+    def __init__(self, x, y, feedback=None):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.cooldown_timer = 0
+        self.feedback = feedback
 
     # in the Player class
     def triangle(self) -> list[pygame.Vector2]:
@@ -66,7 +68,13 @@ class Player(CircleShape):
         return False
 
     def draw(self, screen):
-        pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
+        # The artwork faces up; the game's zero heading faces down.
+        size = (round(self.radius * 4 / 3), round(self.radius * 2))
+        image = get_sprite("player", size, 180 - self.rotation)
+        if self.feedback is None:
+            draw_centered(screen, image, self.position)
+        else:
+            self.feedback.draw_player(screen, self, image)
 
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
@@ -103,4 +111,6 @@ class Player(CircleShape):
         shot = Shot(self.position.x, self.position.y)
         direction = pygame.Vector2(0, 1)
         direction = direction.rotate(self.rotation)
-        shot.velocity = direction * PLAYER_SHOOT_SPEED        
+        shot.velocity = direction * PLAYER_SHOOT_SPEED
+        if self.feedback is not None:
+            self.feedback.laser_fired(self)
